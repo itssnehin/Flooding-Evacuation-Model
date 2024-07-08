@@ -89,46 +89,47 @@ for node, row in nodes_gdf.iterrows():
 for (u, v, k), row in edges_gdf.iterrows():
     G[u][v][k]['min_elevation'] = row['min_elevation']
 
-# Define start and end coordinates (latitude, longitude)
-start_coord = (-27.4975, 153.0137)  # Approximate location of UQ Lakes bus station
-end_coord = (27.4977, 152.9882)    # Approximate location of St Lucia Community Hall
+# After creating the graph G
+print(f"Number of nodes in the graph: {G.number_of_nodes()}")
+print(f"Number of edges in the graph: {G.number_of_edges()}")
 
-# Get nearest network nodes to points
 # Define start and end coordinates (latitude, longitude)
 start_coord = (-27.4975, 153.0137)  # Approximate location of UQ Lakes bus station
-end_coord = (-27.4977, 152.9882)    # Approximate location of St Lucia Community Hall (fixed latitude)
+end_coord = (-27.4977, 152.9882)    # Approximate location of St Lucia Community Hall
 
 # Get nearest network nodes to points
 start_node = get_nearest_node(G, *start_coord)
 end_node = get_nearest_node(G, *end_coord)
 
-# debug network
-if nx.is_connected(G):
-    print("The graph is connected.")
-else:
-    print("The graph is not connected. This may limit the number of paths.")
+print(f"Start node coordinates: {G.nodes[start_node]['y']}, {G.nodes[start_node]['x']}")
+print(f"End node coordinates: {G.nodes[end_node]['y']}, {G.nodes[end_node]['x']}")
 
-if start_node in G.nodes() and end_node in G.nodes():
-    print("Both start and end nodes are in the graph.")
-else:
-    print("One or both of the nodes are not in the graph.")
+# Ensure all edges have numeric 'min_elevation' values
+for u, v, key, data in G.edges(data=True, keys=True):
+    if 'min_elevation' not in data or not isinstance(data['min_elevation'], (int, float)):
+        data['min_elevation'] = 0  # Default to 0 if missing or non-numeric
 
 # Find K shortest paths
 K = 6
 shortest_paths = k_shortest_paths(G, start_node, end_node, K)
 
-# Debugging the shortest paths
-print(f"Start node: {start_node}, End node: {end_node}")
-print(f"Number of paths found: {len(shortest_paths)}")
+# If we still don't find multiple paths, try with different weights
+if len(shortest_paths) < K:
+    print("Trying to find paths with minimum elevation...")
+    elevation_paths = k_shortest_paths(G, start_node, end_node, K, weight='min_elevation')
+    shortest_paths.extend([p for p in elevation_paths if p not in shortest_paths])
 
-if len(shortest_paths) == 0:
-    print("No paths found. The start and end nodes might not be connected.")
-elif len(shortest_paths) < K:
-    print(f"Found {len(shortest_paths)} paths, which is less than the requested {K} paths.")
-    print("This could be because there are no more unique paths between the start and end nodes.")
+# If we still don't have enough paths, try with a combination of length and elevation
+if len(shortest_paths) < K:
+    print("Trying to find paths with combined length and elevation...")
+    for u, v, key, data in G.edges(data=True, keys=True):
+        data['combined_weight'] = data['length'] * (1 + data['min_elevation'] / 100)
+    combined_paths = k_shortest_paths(G, start_node, end_node, K, weight='combined_weight')
+    shortest_paths.extend([p for p in combined_paths if p not in shortest_paths])
 
-# continue with path analysis and plotting
+print(f"Total number of unique paths found: {len(shortest_paths)}")
 
+# Continue with your path analysis and plotting...
 # Plot and analyze paths
 for i, (path, length) in enumerate(shortest_paths, 1):
     node_elevations = [G.nodes[node]['elevation'] for node in path]
