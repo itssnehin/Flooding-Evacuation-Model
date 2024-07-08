@@ -51,6 +51,21 @@ nodes_gdf, edges_gdf = ox.graph_to_gdfs(G)
 
 # Function to assign elevation to geometries
 def assign_elevation(geom):
+    """
+    Assigns the minimum elevation value from contour data to a given geometry.
+
+    Parameters:
+    geom (shapely.geometry.base.BaseGeometry): The geometry to assign elevation to.
+
+    Returns:
+    float: The minimum elevation value found within the contour data that intersects with the given geometry.
+           If no intersection is found, returns NaN.
+
+    Note:
+    This function uses a spatial index to efficiently find potential matches in the contour data.
+    It then filters these potential matches based on their actual intersection with the given geometry.
+    Finally, it returns the minimum elevation value among the precise matches.
+    """
     possible_matches_idx = list(spatial_index.intersection(geom.bounds))
     possible_matches = contour_gdf.iloc[possible_matches_idx]
     precise_matches = possible_matches[possible_matches.intersects(geom)]
