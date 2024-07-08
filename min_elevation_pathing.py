@@ -26,7 +26,7 @@ def get_nearest_node(G, lat, lon):
     return ox.nearest_nodes(G, lon, lat)
 
 # Load contour data
-contour_gdf = gpd.read_file('st_lucia_contour_data.gpkg')
+contour_gdf = gpd.read_file('data/st_lucia_contour_data.gpkg')
 
 # Simplify contour data if it's very detailed
 contour_gdf['geometry'] = contour_gdf['geometry'].simplify(tolerance=1)
