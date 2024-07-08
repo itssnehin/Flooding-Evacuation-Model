@@ -94,6 +94,11 @@ start_coord = (-27.4975, 153.0137)  # Approximate location of UQ Lakes bus stati
 end_coord = (27.4977, 152.9882)    # Approximate location of St Lucia Community Hall
 
 # Get nearest network nodes to points
+# Define start and end coordinates (latitude, longitude)
+start_coord = (-27.4975, 153.0137)  # Approximate location of UQ Lakes bus station
+end_coord = (-27.4977, 152.9882)    # Approximate location of St Lucia Community Hall (fixed latitude)
+
+# Get nearest network nodes to points
 start_node = get_nearest_node(G, *start_coord)
 end_node = get_nearest_node(G, *end_coord)
 
@@ -140,22 +145,32 @@ for i, (path, length) in enumerate(shortest_paths, 1):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f"route_{i}.png"))
     plt.close()
-
+    
 # Plot all paths on the graph
 node_elevations = [G.nodes[node].get('elevation', 0) for node in G.nodes()]
 fig, ax = ox.plot_graph(G, node_color=node_elevations, 
                         node_size=5, edge_linewidth=0.5, edge_color='#999999')
 
+# Improve path visibility
+colors = plt.cm.rainbow(np.linspace(0, 1, len(shortest_paths)))
 for i, (path, _) in enumerate(shortest_paths):
     route_edges = list(zip(path[:-1], path[1:]))
     route_lines = [G[u][v][0]['geometry'] for u, v in route_edges]
-    color = plt.cm.tab10(i/10)
+    color = colors[i]
     for line in route_lines:
-        ax.plot(*line.xy, color=color, linewidth=2, alpha=0.8)
+        ax.plot(*line.xy, color=color, linewidth=3, alpha=0.8)
 
-plt.title("All Paths with Elevation-based Node Colors")
+# Add start and end markers
+start_x, start_y = G.nodes[start_node]['x'], G.nodes[start_node]['y']
+end_x, end_y = G.nodes[end_node]['x'], G.nodes[end_node]['y']
+ax.plot(start_x, start_y, 'go', markersize=10, label='Start')
+ax.plot(end_x, end_y, 'ro', markersize=10, label='End')
+
+plt.title(f"{len(shortest_paths)} Shortest Paths with Elevation-based Node Colors")
+plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, "all_paths.png"))
+plt.savefig(os.path.join(output_dir, "all_paths.png"), dpi=300, bbox_inches='tight')
 plt.close()
 
 print(f"All route images have been saved in the '{output_dir}' directory.")
+print(f"Number of paths found: {len(shortest_paths)}")
