@@ -129,11 +129,17 @@ if len(shortest_paths) < K:
 
 print(f"Total number of unique paths found: {len(shortest_paths)}")
 
-# Continue with your path analysis and plotting...
+import matplotlib.pyplot as plt
+import osmnx as ox
+import networkx as nx
+from shapely.geometry import LineString
+
+# ... (keep your existing code up to the path finding part)
+
 # Plot and analyze paths
 for i, (path, length) in enumerate(shortest_paths, 1):
     node_elevations = [G.nodes[node]['elevation'] for node in path]
-    edge_elevations = [G[path[j]][path[j+1]][0].get('min_elevation', 0) for j in range(len(path)-1)]
+    edge_elevations = [min(G[path[j]][path[j+1]][k].get('min_elevation', 0) for k in G[path[j]][path[j+1]]) for j in range(len(path)-1)]
     all_elevations = node_elevations + edge_elevations
     min_elevation = min(all_elevations)
     
@@ -160,41 +166,63 @@ for i, (path, length) in enumerate(shortest_paths, 1):
     plt.close()
 
     # Plot individual route
-    fig, ax = ox.plot_graph(G, node_size=0, edge_linewidth=0.5, edge_color='#999999')
+    fig, ax = ox.plot_graph(G, node_size=0, edge_linewidth=0.5, edge_color='#999999', show=False, close=False)
     route_edges = list(zip(path[:-1], path[1:]))
-    route_lines = [G[u][v][0]['geometry'] for u, v in route_edges]
+    route_lines = []
+    for u, v in route_edges:
+        # Get the geometry of the edge
+        edge_data = G.get_edge_data(u, v)
+        if edge_data:
+            for _, data in edge_data.items():
+                if 'geometry' in data:
+                    route_lines.append(data['geometry'])
+                else:
+                    # If there's no geometry, create a straight line
+                    route_lines.append(LineString([(G.nodes[u]['x'], G.nodes[u]['y']), 
+                                                   (G.nodes[v]['x'], G.nodes[v]['y'])]))
+    
     for line in route_lines:
-        ax.plot(*line.xy, color='r', linewidth=4, alpha=0.8)
+        ax.plot(*line.xy, color='r', linewidth=2, alpha=0.8)
+    
+    # Add start and end markers
+    ax.scatter(G.nodes[path[0]]['x'], G.nodes[path[0]]['y'], c='green', s=100, zorder=5, label='Start')
+    ax.scatter(G.nodes[path[-1]]['x'], G.nodes[path[-1]]['y'], c='red', s=100, zorder=5, label='End')
+    
     plt.title(f"Route {i}")
+    plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f"route_{i}.png"))
     plt.close()
-    
-# Plot all paths on the graph
-node_elevations = [G.nodes[node].get('elevation', 0) for node in G.nodes()]
-fig, ax = ox.plot_graph(G, node_color=node_elevations, 
-                        node_size=5, edge_linewidth=0.5, edge_color='#999999')
 
-# Improve path visibility
+# Plot all paths on the graph
+fig, ax = ox.plot_graph(G, node_color=[data.get('elevation', 0) for _, data in G.nodes(data=True)], 
+                        node_size=5, edge_linewidth=0.5, edge_color='#999999', show=False, close=False)
+
 colors = plt.cm.rainbow(np.linspace(0, 1, len(shortest_paths)))
 for i, (path, _) in enumerate(shortest_paths):
     route_edges = list(zip(path[:-1], path[1:]))
-    route_lines = [G[u][v][0]['geometry'] for u, v in route_edges]
-    color = colors[i]
+    route_lines = []
+    for u, v in route_edges:
+        edge_data = G.get_edge_data(u, v)
+        if edge_data:
+            for _, data in edge_data.items():
+                if 'geometry' in data:
+                    route_lines.append(data['geometry'])
+                else:
+                    route_lines.append(LineString([(G.nodes[u]['x'], G.nodes[u]['y']), 
+                                                   (G.nodes[v]['x'], G.nodes[v]['y'])]))
+    
     for line in route_lines:
-        ax.plot(*line.xy, color=color, linewidth=3, alpha=0.8)
+        ax.plot(*line.xy, color=colors[i], linewidth=2, alpha=0.8)
 
 # Add start and end markers
-start_x, start_y = G.nodes[start_node]['x'], G.nodes[start_node]['y']
-end_x, end_y = G.nodes[end_node]['x'], G.nodes[end_node]['y']
-ax.plot(start_x, start_y, 'go', markersize=10, label='Start')
-ax.plot(end_x, end_y, 'ro', markersize=10, label='End')
+ax.scatter(G.nodes[start_node]['x'], G.nodes[start_node]['y'], c='green', s=100, zorder=5, label='Start')
+ax.scatter(G.nodes[end_node]['x'], G.nodes[end_node]['y'], c='red', s=100, zorder=5, label='End')
 
-plt.title(f"{len(shortest_paths)} Shortest Paths with Elevation-based Node Colors")
+plt.title("All Paths with Elevation-based Node Colors")
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, "all_paths.png"), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, "all_paths.png"))
 plt.close()
 
 print(f"All route images have been saved in the '{output_dir}' directory.")
-print(f"Number of paths found: {len(shortest_paths)}")
