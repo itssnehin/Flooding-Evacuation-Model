@@ -102,6 +102,17 @@ end_coord = (-27.4977, 152.9882)    # Approximate location of St Lucia Community
 start_node = get_nearest_node(G, *start_coord)
 end_node = get_nearest_node(G, *end_coord)
 
+# debug network
+if nx.is_connected(G):
+    print("The graph is connected.")
+else:
+    print("The graph is not connected. This may limit the number of paths.")
+
+if start_node in G.nodes() and end_node in G.nodes():
+    print("Both start and end nodes are in the graph.")
+else:
+    print("One or both of the nodes are not in the graph.")
+
 # Find K shortest paths
 K = 6
 shortest_paths = k_shortest_paths(G, start_node, end_node, K)
