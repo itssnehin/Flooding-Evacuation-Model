@@ -91,14 +91,14 @@ for (u, v, k), row in edges_gdf.iterrows():
 
 # Define start and end coordinates (latitude, longitude)
 start_coord = (-27.4975, 153.0137)  # Approximate location of UQ Lakes bus station
-end_coord = (-27.4994, 153.0144)    # Approximate location of UQ Centre
+end_coord = (27.4977, 152.9882)    # Approximate location of St Lucia Community Hall
 
 # Get nearest network nodes to points
 start_node = get_nearest_node(G, *start_coord)
 end_node = get_nearest_node(G, *end_coord)
 
 # Find K shortest paths
-K = 1
+K = 6
 shortest_paths = k_shortest_paths(G, start_node, end_node, K)
 
 # Plot and analyze paths
