@@ -106,6 +106,18 @@ end_node = get_nearest_node(G, *end_coord)
 K = 6
 shortest_paths = k_shortest_paths(G, start_node, end_node, K)
 
+# Debugging the shortest paths
+print(f"Start node: {start_node}, End node: {end_node}")
+print(f"Number of paths found: {len(shortest_paths)}")
+
+if len(shortest_paths) == 0:
+    print("No paths found. The start and end nodes might not be connected.")
+elif len(shortest_paths) < K:
+    print(f"Found {len(shortest_paths)} paths, which is less than the requested {K} paths.")
+    print("This could be because there are no more unique paths between the start and end nodes.")
+
+# continue with path analysis and plotting
+
 # Plot and analyze paths
 for i, (path, length) in enumerate(shortest_paths, 1):
     node_elevations = [G.nodes[node]['elevation'] for node in path]

@@ -1,14 +1,14 @@
 import heapq
+
 def k_shortest_paths(G, start, end, K):
-    
     """
-    This function finds the k shortest paths between two nodes in a graph using Dijkstra's algorithm.
+    This function finds up to k shortest paths between two nodes in a graph using Dijkstra's algorithm.
 
     Parameters:
     G (NetworkX graph): The graph in which to find the paths.
     start (node): The starting node for the paths.
     end (node): The ending node for the paths.
-    K (int): The number of shortest paths to find.
+    K (int): The maximum number of shortest paths to find.
 
     Returns:
     list: A list of tuples, where each tuple contains a path (list of nodes) and its corresponding cost.
@@ -54,4 +54,4 @@ def k_shortest_paths(G, start, end, K):
                     new_pred[neighbor] = node  # Update the predecessor dictionary for the neighbor
                     heapq.heappush(queue, (cost + edge_length, neighbor, new_pred))  # Add the neighbor to the queue
 
-    return paths  # Return the list of found paths
+    return paths  # Return all found paths, even if less than K
